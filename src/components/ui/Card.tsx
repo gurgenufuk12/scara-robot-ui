@@ -2,10 +2,11 @@ import React from "react";
 
 interface CardProps {
   children: React.ReactNode;
+  className?: string;
 }
 
-export const Card: React.FC<CardProps> = ({ children }) => {
-  return <div className="bg-gray-800 p-5 rounded-xl shadow-md">{children}</div>;
+export const Card: React.FC<CardProps> = ({ children, className }) => {
+  return <div className={className}>{children}</div>;
 };
 
 interface CardContentProps {

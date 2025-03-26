@@ -11,11 +11,9 @@ export default function CartesianControl({
   const [y, setY] = useState(0);
 
   return (
-    <Card>
+    <Card className="bg-gray-800 p-5 rounded-xl shadow-md">
       <CardContent>
-        <h2 className="text-xl font-semibold">
-          Kartezyen Kontrol
-        </h2>
+        <h2 className="text-xl font-semibold">Kartezyen Kontrol</h2>
         <div className="mt-4 flex items-center gap-2">
           <label>X Koordinat</label>
           <Button onClick={() => setX(x - 1)} disabled={!selectedRobot}>
