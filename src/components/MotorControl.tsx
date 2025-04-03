@@ -1,24 +1,23 @@
 import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/Switch";
 import { Button } from "@/components/ui/Button";
-
-const API_BASE_URL = "http://localhost:5114/api/robot";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { toggleMotor, setAllMotors, toggleAllMotors } from "@/store/robotSlice";
+const API_URL = "http://localhost:8000/api/robot";
 
 export default function MotorControl() {
-  const [motorStatus, setMotorStatus] = useState<{ [key: string]: boolean }>({
-    robot1_motor1: false,
-    robot1_motor2: false,
-    robot2_motor1: false,
-    robot2_motor2: false,
-  });
+  const dispatch = useAppDispatch();
+  const { selectedRobotId, robots } = useAppSelector((state) => state.robot);
+
+  const selectedRobot = selectedRobotId ? robots[selectedRobotId] : null;
+  // const axisCount = selectedRobot ? selectedRobot.axisCount : 0;
+  const motorStatus = selectedRobot ? selectedRobot.motors : {};
+  const motors = selectedRobot ? selectedRobot.motors : {};
 
   const [blink, setBlink] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Fetch initial motor status when component mounts
   useEffect(() => {
-    fetchMotorStatus();
-
     const blinkInterval = setInterval(() => {
       setBlink((prev) => !prev);
     }, 500);
@@ -26,97 +25,105 @@ export default function MotorControl() {
     return () => clearInterval(blinkInterval);
   }, []);
 
-  // Get current motor status from the backend
-  const fetchMotorStatus = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/robot-status`);
-      if (response.ok) {
-        const data = await response.json();
-        setMotorStatus(data);
-      } else {
-        console.error("Failed to fetch motor status");
-      }
-    } catch (error) {
-      console.error("Error fetching motor status:", error);
-    }
-  };
+  const handleToggleMotor = (motorId: string) => {
+    if (!selectedRobotId) return;
 
-  // Toggle individual motor
-  const toggleMotor = async (
-    robot: "robot1" | "robot2",
-    motor: "motor1" | "motor2"
-  ) => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/toggle-${robot}-${motor}`, {
+      fetch(`${API_URL}/toggle_${selectedRobotId}_${motorId}`, {
         method: "POST",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMotorStatus((prev) => ({
-          ...prev,
-          [`${robot}_${motor}`]: data.durum,
-        }));
-      }
-    } catch (error) {
-      console.error(`Error toggling ${robot} ${motor}:`, error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  // Turn all motors on
-  const turnAllMotorsOn = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/turn-on-all-motors`, {
-        method: "POST",
-      });
-      console.log("response", response);
-
-      if (response.ok) {
-        const data = await response.json();
-        setMotorStatus(data.status);
-      }
-    } catch (error) {
-      console.error("Error turning on all motors:", error);
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ selectedRobotId, motorId }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          dispatch(
+            toggleMotor({
+              robotId: selectedRobotId,
+              motorId,
+            })
+          );
+          console.log("asdsadsadsa:", data);
+        })
+        .catch((error) => {
+          console.error("Robot seçimi hatası:", error);
+        });
     } finally {
       setLoading(false);
     }
   };
 
-  // Turn all motors off
-  const turnAllMotorsOff = async () => {
+  const handleTurnAllMotorsOn = () => {
+    if (!selectedRobotId) return;
+
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/turn-off-all-motors`, {
+      fetch(`${API_URL}/toggle-all-motors-on`, {
         method: "POST",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMotorStatus(data.status);
-      }
-    } catch (error) {
-      console.error("Error turning off all motors:", error);
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          dispatch(
+            setAllMotors({
+              robotId: selectedRobotId,
+              status: true,
+            })
+          );
+          console.log("Tüm motorlar açıldı:", data);
+        })
+        .catch((error) => {
+          console.error("Motor açma hatası:", error);
+        });
     } finally {
       setLoading(false);
     }
   };
 
-  // Toggle all motors to a specified state
-  const toggleAllMotors = (state: boolean) => {
-    if (state) {
-      turnAllMotorsOn();
-    } else {
-      turnAllMotorsOff();
+  const handleEmergencyStop = () => {
+    setLoading(true);
+    try {
+      fetch(`${API_URL}/emergency-stop`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          dispatch(
+            toggleAllMotors({
+              robotId: selectedRobotId,
+              status: false,
+            })
+          );
+          console.log("Tüm motorlar kapandı", data);
+        })
+        .catch((error) => {
+          console.error("Motor kapatma hatası:", error);
+        });
+    } finally {
+      setLoading(false);
     }
-  };
-
-  // Emergency stop - turn off all motors
-  const emergencyStop = () => {
-    turnAllMotorsOff();
-    console.log("EMERGENCY STOP ACTIVATED");
   };
 
   const StatusIndicator = ({ isActive }: { isActive: boolean }) => {
@@ -131,80 +138,82 @@ export default function MotorControl() {
     );
   };
 
+  const MotorControl = ({
+    motorId,
+    label,
+  }: {
+    motorId: string;
+    label: string;
+  }) => {
+    const isActive = motorStatus[motorId] || false;
+
+    return (
+      <div className="flex flex-row">
+        <span className="text-xl text-gray-400">{label}</span>
+        <div className="flex items-center">
+          <StatusIndicator isActive={isActive} />
+          <Switch
+            checked={isActive}
+            onCheckedChange={() => handleToggleMotor(motorId)}
+            disabled={loading}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  if (!selectedRobot) {
+    return null;
+  }
+
   return (
-    <div className="flex items-center gap-3 bg-gray-200 p-2 rounded-md">
+    <div className="flex flex-col gap-3 bg-gray-700 p-3 rounded-md border border-gray-600 shadow-inner">
       {loading && (
-        <div className="absolute inset-0 bg-black/10 flex items-center justify-center z-10">
-          İşlem yapılıyor...
+        <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-10 rounded">
+          <div className="bg-gray-800 px-4 py-2 rounded text-sm text-white">
+            İşlem yapılıyor...
+          </div>
         </div>
       )}
 
-      <div className="flex items-center gap-2 border-r pr-3 border-gray-300">
-        <div className="text-xs font-medium text-black font-sans">Robot 1:</div>
+      <div className="mr-3 pr-3">
+        <div className="text-sm font-medium text-white mb-1">
+          {selectedRobot.name}
+        </div>
         <div className="flex items-center">
-          <div className="flex flex-col items-center mx-1">
-            <span className="text-[10px] text-gray-500">J1</span>
-            <div className="flex items-center">
-              <StatusIndicator isActive={motorStatus.robot1_motor1} />
-              <Switch
-                checked={motorStatus.robot1_motor1}
-                onCheckedChange={() => toggleMotor("robot1", "motor1")}
-                disabled={loading}
-              />
-            </div>
-          </div>
-          <div className="flex flex-col items-center mx-1">
-            <span className="text-[10px] text-gray-500">J2</span>
-            <div className="flex items-center">
-              <StatusIndicator isActive={motorStatus.robot1_motor2} />
-              <Switch
-                checked={motorStatus.robot1_motor2}
-                onCheckedChange={() => toggleMotor("robot1", "motor2")}
-                disabled={loading}
-              />
-            </div>
-          </div>
+          <div
+            className={`h-2 w-2 rounded-full ${
+              selectedRobot.isConnected ? "bg-green-500" : "bg-red-500"
+            } mr-1`}
+          ></div>
+          <span className="text-xs text-gray-300">
+            {selectedRobot.isConnected ? "Bağlı" : "Bağlantı Yok"}
+          </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 border-r pr-3 border-gray-300">
-        <div className="text-xs font-medium text-black font-sans">Robot 2:</div>
-        <div className="flex items-center">
-          <div className="flex flex-col items-center mx-1">
-            <span className="text-[10px] text-gray-500">J1</span>
-            <div className="flex items-center">
-              <StatusIndicator isActive={motorStatus.robot2_motor1} />
-              <Switch
-                checked={motorStatus.robot2_motor1}
-                onCheckedChange={() => toggleMotor("robot2", "motor1")}
-                disabled={loading}
-              />
-            </div>
-          </div>
-          <div className="flex flex-col items-center mx-1">
-            <span className="text-[10px] text-gray-500">J2</span>
-            <div className="flex items-center">
-              <StatusIndicator isActive={motorStatus.robot2_motor2} />
-              <Switch
-                checked={motorStatus.robot2_motor2}
-                onCheckedChange={() => toggleMotor("robot2", "motor2")}
-                disabled={loading}
-              />
-            </div>
-          </div>
+      <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-3">
+          {Object.keys(motors).map((motorId) => (
+            <MotorControl
+              key={motorId}
+              motorId={motorId}
+              label={`J${motorId.slice(-1)}`}
+            />
+          ))}
         </div>
       </div>
 
       <div className="flex items-center gap-2">
         <Button
-          onClick={() => toggleAllMotors(true)}
+          onClick={handleTurnAllMotorsOn}
           className="bg-green-600 hover:bg-green-700 py-1 px-2 text-xs"
           disabled={loading}
         >
           Tümünü Aç
         </Button>
         <Button
-          onClick={emergencyStop}
+          onClick={handleEmergencyStop}
           className="bg-red-600 hover:bg-red-700 py-1 px-2 text-xs border border-yellow-500"
           disabled={loading}
         >
