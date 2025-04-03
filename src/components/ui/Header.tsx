@@ -1,6 +1,6 @@
 import Image from "next/image";
 import logo from "../../../public/grass_logo.png";
-import MotorControl from "@/components/MotorControl";
+// import MotorControl from "@/components/MotorControl";
 
 export default function Header() {
   return (
@@ -11,7 +11,7 @@ export default function Header() {
           SCARA Robot Arayüzü
         </h1>
       </div>
-      <MotorControl />
+      {/* <MotorControl /> */}
     </header>
   );
 }
