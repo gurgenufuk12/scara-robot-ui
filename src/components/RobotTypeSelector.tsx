@@ -1,15 +1,45 @@
-import { useAppDispatch } from "../store/hooks";
-import { setRobotType } from "@/store/robotSlice";
+import React from "react";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+  setRobotType,
+  selectRobot,
+  updateMotorStatuses,
+} from "@/store/robotSlice";
 
 const API_URL = "http://localhost:8000/api/robot";
 
 export default function RobotTypeSelector() {
   const dispatch = useAppDispatch();
+  const { robots } = useAppSelector((state) => state.robot);
 
+  const getMotorStatusForRobot = async (robotId: string) => {
+    if (!robotId) return Promise.reject(new Error("Robot ID belirtilmedi"));
+
+    const response = await fetch(`${API_URL}/get_motor_status`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+    console.log(`Robot ${robotId} için motor durumu:`, data);
+    // API'dan gelen motor durumları
+    const motorStatuses = data.motors || {};
+    // Redux store'u güncellemek için tüm motor durumlarını bir kerede gönder
+    dispatch(
+      updateMotorStatuses({
+        robotId,
+        motors: motorStatuses,
+      })
+    );
+    console.log(`${robotId} için motor durumları güncellendi:`, motorStatuses);
+    return data;
+  };
   const handleSelectRobot = (type: "scara" | "industrial") => {
     try {
-      // create POST request to API EBNDPOINT "choose_robot_axis"
-      // with body { type }
       fetch(`${API_URL}/choose_robot_axis`, {
         method: "POST",
         headers: {
@@ -25,7 +55,64 @@ export default function RobotTypeSelector() {
         })
         .then((data) => {
           dispatch(setRobotType(type));
-          console.log("Robot seçimi başarılı:", data);
+
+          if (type === "scara") {
+            const availableScaraRobots = Object.values(robots)
+              .filter((robot) => robot.axisCount === 2)
+              .map((robot) => robot.id);
+
+            if (availableScaraRobots.length > 0) {
+              console.log(
+                "İlk SCARA robotu seçiliyor:",
+                availableScaraRobots[0]
+              );
+              try {
+                fetch(`${API_URL}/choose-active-robot`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    type: availableScaraRobots[0],
+                  }),
+                })
+                  .then((response) => {
+                    if (!response.ok) {
+                      throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                  })
+                  .then((data) => {
+                    // console.log("Robot seçimi başarılı:", data);
+                    return getMotorStatusForRobot(availableScaraRobots[0]);
+                  })
+                  .catch((error) => {
+                    console.error("Robot seçimi hatası:", error);
+                  });
+              } catch (error) {
+                console.error("Hata:", error);
+              }
+
+              dispatch(selectRobot(availableScaraRobots[0]));
+            } else {
+              console.warn("Kullanılabilir SCARA robot bulunamadı");
+            }
+          } else if (type === "industrial") {
+            // Industrial tipi için 6 eksenli robotları filtrele
+            const availableIndustrialRobots = Object.values(robots)
+              .filter((robot) => robot.axisCount === 6)
+              .map((robot) => robot.id);
+
+            if (availableIndustrialRobots.length > 0) {
+              console.log(
+                "İlk endüstriyel robot seçiliyor:",
+                availableIndustrialRobots[0]
+              );
+              dispatch(selectRobot(availableIndustrialRobots[0]));
+            } else {
+              console.warn("Kullanılabilir endüstriyel robot bulunamadı");
+            }
+          }
         })
         .catch((error) => {
           console.error("Robot seçimi hatası:", error);
@@ -34,6 +121,7 @@ export default function RobotTypeSelector() {
       console.error("Hata:", error);
     }
   };
+  // useEffect(() => {}, [robotType, selectedRobotId, robots, dispatch]);
   return (
     <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-lg max-w-2xl mx-auto mt-10">
       <h2 className="text-2xl text-white font-bold mb-6 text-center">

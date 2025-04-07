@@ -149,7 +149,9 @@ const robotSlice = createSlice({
       if (state.robots[robotId]) {
         for (const motorId in state.robots[robotId].motors) {
           state.robots[robotId].motors[motorId] =
-            status !== undefined ? status : !state.robots[robotId].motors[motorId];
+            status !== undefined
+              ? status
+              : !state.robots[robotId].motors[motorId];
         }
       }
     },
@@ -179,6 +181,29 @@ const robotSlice = createSlice({
         state.robots[robotId].isConnected = isConnected;
       }
     },
+    updateMotorStatuses: (
+      state,
+      action: PayloadAction<{
+        robotId: string;
+        motors: { [motorId: string]: boolean };
+      }>
+    ) => {
+      const { robotId, motors } = action.payload;
+
+      if (state.robots[robotId]) {
+        state.robots[robotId].motors = {
+          ...state.robots[robotId].motors,
+          ...motors,
+        };
+
+        console.log(
+          `Redux: ${robotId} için motor durumları güncellendi`,
+          motors
+        );
+      } else {
+        console.warn(`Redux: ${robotId} bulunamadı`);
+      }
+    },
   },
 });
 
@@ -193,6 +218,7 @@ export const {
   setRobotStatus,
   setRobotConnection,
   toggleAllMotors,
+  updateMotorStatuses,
 } = robotSlice.actions;
 
 export default robotSlice.reducer;
