@@ -1,18 +1,19 @@
-import { useEffect } from "react";
+import { useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { selectRobot } from "@/store/robotSlice";
-
+import { selectRobot, updateMotorStatuses } from "@/store/robotSlice";
 const API_URL = "http://localhost:8000/api/robot";
 
 export default function RobotSelector() {
+  const [loading, setLoading] = useState(false);
   const dispatch = useAppDispatch();
   const { robotType, selectedRobotId, robots } = useAppSelector(
     (state) => state.robot
   );
 
+  // console.log("robot selector", selectedRobotId);
+
   const handleSelect = (robotId: string) => {
     try {
-      // apı ya endpoint choose-active-robot seçilmiş robotun adını gönder
       fetch(`${API_URL}/choose-active-robot`, {
         method: "POST",
         headers: {
@@ -29,57 +30,44 @@ export default function RobotSelector() {
           return response.json();
         })
         .then((data) => {
-          // console.log("Robot seçimi başarılı:", data);
           dispatch(selectRobot(robotId));
+          return getMotorStatusForRobot(robotId);
         })
         .catch((error) => {
           console.error("Robot seçimi hatası:", error);
-        });
+        })
+        .finally(() => {});
     } catch (error) {
       console.error("Hata:", error);
     }
   };
-
-  // Varsayılan robot seçimi
-  useEffect(() => {
-    if (robotType === "scara" && !selectedRobotId) {
-      // SCARA tipi seçilmiş ancak robot seçilmemişse, varsayılan olarak robot1 seç
-      const availableScaraRobots = Object.values(robots)
-        .filter((robot) => robot.axisCount === 2)
-        .map((robot) => robot.id);
-
-      if (availableScaraRobots.length > 0) {
-        try {
-          // apı ya endpoint choose-active-robot seçilmiş robotun adını gönder
-          fetch(`${API_URL}/choose-active-robot`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              type: availableScaraRobots[0],
-            }),
-          })
-            .then((response) => {
-              if (!response.ok) {
-                throw new Error("Network response was not ok");
-              }
-              return response.json();
-            })
-            .then((data) => {
-              // console.log("Robot seçimi başarılı:", data);
-              dispatch(selectRobot(availableScaraRobots[0]));
-            })
-            .catch((error) => {
-              console.error("Robot seçimi hatası:", error);
-            });
-        } catch (error) {
-          console.error("Hata:", error);
-        }
-      }
+  const getMotorStatusForRobot = async (robotId: string) => {
+    if (!robotId) return Promise.reject(new Error("Robot ID belirtilmedi"));
+    setLoading(true);
+    const response = await fetch(`${API_URL}/get_motor_status`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
     }
-  }, [robotType, selectedRobotId, robots, dispatch]);
-
+    const data = await response.json();
+    console.log(`Robot ${robotId} için motor durumu:`, data);
+    // API'dan gelen motor durumları
+    const motorStatuses = data.motors || {};
+    // Redux store'u güncellemek için tüm motor durumlarını bir kerede gönder
+    dispatch(
+      updateMotorStatuses({
+        robotId,
+        motors: motorStatuses,
+      })
+    );
+    console.log(`${robotId} için motor durumları güncellendi:`, motorStatuses);
+    setLoading(false);
+    return data;
+  };
   // 6 eksenli robot seçilmiş ise otomatik seçim yapılır, kullanıcı arayüzü gösterilmez
   if (robotType === "industrial") {
     const industrialRobot = Object.values(robots).find(
