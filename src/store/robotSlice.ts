@@ -23,7 +23,7 @@ const initialState: RobotState = {
       name: "SCARA Robot 2",
       axisCount: 2,
       type: "SCARA",
-      jointValues: [0, 0],
+      jointValues: [100, 200],
       motors: {
         motor1: false,
         motor2: false,
@@ -195,11 +195,6 @@ const robotSlice = createSlice({
           ...state.robots[robotId].motors,
           ...motors,
         };
-
-        console.log(
-          `Redux: ${robotId} için motor durumları güncellendi`,
-          motors
-        );
       } else {
         console.warn(`Redux: ${robotId} bulunamadı`);
       }
