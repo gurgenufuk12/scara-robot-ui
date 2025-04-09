@@ -1,14 +1,68 @@
-// src/components/RobotViewer.tsx
-import { useAppSelector } from "@/store/hooks";
+import { useEffect } from "react";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { updateJointValue } from "@/store/robotSlice";
 import { Card } from "@/components/ui/Card";
+const API_URL = "http://localhost:8000/api/robot";
+interface JointData {
+  joints: Record<string, number>;
+}
 
 export default function RobotViewer() {
+  const dispatch = useAppDispatch();
   const { selectedRobotId, robots } = useAppSelector((state) => state.robot);
 
   const selectedRobot = selectedRobotId ? robots[selectedRobotId] : null;
   const axisCount = selectedRobot ? selectedRobot.axisCount : 0;
   const jointValues = selectedRobot ? selectedRobot.jointValues : [];
 
+  const handleReduxJointUpdate = (data: JointData) => {
+    if (data.joints && selectedRobotId) {
+      Object.keys(data.joints).forEach((jointName) => {
+        const jointIndex = parseInt(jointName.replace("joint", "")) - 1;
+        const jointValue = data.joints[jointName];
+
+        dispatch(
+          updateJointValue({
+            robotId: selectedRobotId,
+            jointIndex: jointIndex,
+            value: jointValue,
+          })
+        );
+      });
+    }
+  };
+  const getJointValue = () => {
+    try {
+      fetch(`${API_URL}/get_joint_value`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          // console.log("Gelen veri:", data);
+          handleReduxJointUpdate(data);
+        })
+        .catch((error) => {
+          console.error("Hata:", error);
+        });
+    } catch (error) {
+      console.error("Hata:", error);
+    }
+  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      getJointValue();
+    }, 3000); // 3 saniyede bir çağır
+
+    return () => clearInterval(interval); // Cleanup function
+  }, []);
   return (
     <Card className="bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-700">
       <div className="mb-4 flex justify-between items-center">
