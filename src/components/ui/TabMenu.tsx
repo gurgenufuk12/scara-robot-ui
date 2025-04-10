@@ -3,6 +3,7 @@ import { useAppSelector } from "@/store/hooks";
 import JointControl from "@/components/ui/JointControl";
 import CartesianControl from "@/components/ui/CartesianControl";
 import RobotViewer from "@/components/ui/RobotViewer";
+import ProgramMode from "@/components/ui/ProgramMode";
 
 export default function TabMenu() {
   const { robotType, selectedRobotId, robots } = useAppSelector(
@@ -17,6 +18,7 @@ export default function TabMenu() {
     { id: "joint", label: "Eksen Kontrol", icon: "🔄" },
     { id: "cartesian", label: "Kartezyen Kontrol", icon: "📐" },
     { id: "view", label: "Görselleştirme", icon: "👁️" },
+    { id: "program", label: "Program Modu", icon: "📝" },
     { id: "settings", label: "Ayarlar", icon: "⚙️" },
     { id: "logs", label: "Loglar", icon: "📋" },
   ];
@@ -77,6 +79,8 @@ export default function TabMenu() {
 
         {activeTab === "view" && <RobotViewer />}
 
+        {activeTab === "program" && <ProgramMode />}
+
         {activeTab === "trajectory" && axisCount === 6 && (
           <div className="bg-gray-700 p-6 rounded-lg">
             <h2 className="text-xl text-white font-bold mb-4">
@@ -93,21 +97,6 @@ export default function TabMenu() {
             </div>
           </div>
         )}
-
-        {activeTab === "program" && axisCount === 6 && (
-          <div className="bg-gray-700 p-6 rounded-lg">
-            <h2 className="text-xl text-white font-bold mb-4">Program Modu</h2>
-            <p className="text-gray-300 mb-4">
-              6 eksenli robotunuz için program oluşturma ve düzenleme arayüzü.
-            </p>
-            <div className="bg-gray-800 p-4 rounded border border-gray-600">
-              <div className="text-center text-gray-400 py-10">
-                Program editörü modülü geliştirme aşamasında
-              </div>
-            </div>
-          </div>
-        )}
-
         {activeTab === "settings" && (
           <div className="bg-gray-700 p-6 rounded-lg">
             <h2 className="text-xl text-white font-bold mb-4">Ayarlar</h2>
