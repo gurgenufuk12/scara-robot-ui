@@ -5,6 +5,7 @@ const API_URL = "http://localhost:8000/api/robot";
 
 const ProgramMode = () => {
   const [program, setProgram] = useState("");
+  const [isProgramCodeValid, setIsProgramCodeValid] = useState(false);
   const lines = program.split("\n");
 
   // console.log(program);
@@ -30,8 +31,13 @@ const ProgramMode = () => {
           return response.json();
         })
         .then((data) => {
-          console.log(data);
-          setProgram("");
+          if (data.success) {
+            console.log("Program kodu başarıyla gönderildi.");
+            setIsProgramCodeValid(true);
+          } else {
+            console.error("Program kodu geçersiz.");
+            setIsProgramCodeValid(false);
+          }
         })
         .catch((error) => {
           console.error("API hatası:", error);
@@ -40,7 +46,41 @@ const ProgramMode = () => {
       console.error("Program kodu gönderilirken hata oluştu:", error);
     }
   };
-
+  const handleExecuteProgramCode = () => {
+    if (!program) {
+      console.error("Program kodu boş olamaz.");
+      return;
+    }
+    try {
+      fetch(`${API_URL}/execute-program-code`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          programCode: program,
+        }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            console.log("Program is running...");
+          } else {
+            console.error("Program kodu çalıştırılamadı.");
+          }
+        })
+        .catch((error) => {
+          console.error("API hatası:", error);
+        });
+    } catch (error) {
+      console.error("Program kodu gönderilirken hata oluştu:", error);
+    }
+  };
   return (
     <div className="flex w-full">
       <div className="flex flex-col w-full h-full p-4 bg-gray-800 rounded-lg border border-gray-700">
@@ -52,6 +92,13 @@ const ProgramMode = () => {
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold  rounded"
             >
               Gönder
+            </Button>
+            <Button
+              onClick={handleExecuteProgramCode}
+              disabled={!isProgramCodeValid}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold  rounded"
+            >
+              Çalıştır
             </Button>
           </div>
           <div className="flex w-full h-96 bg-gray-800 text-white rounded overflow-hidden font-mono text-sm border border-gray-600">
