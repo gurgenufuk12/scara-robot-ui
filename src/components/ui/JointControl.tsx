@@ -12,6 +12,10 @@ export default function JointControl() {
 
   const [debug, setDebug] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [activeButton, setActiveButton] = useState<{
+    jointIndex: number | null;
+    direction: string | null;
+  }>({ jointIndex: null, direction: null });
 
   const intervalsRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
@@ -25,12 +29,12 @@ export default function JointControl() {
 
   const sendJointValueToAPI = (jointIndex: number, value: number) => {
     if (!selectedRobotId) return;
+    if (!selectedRobot?.motors[`motor${jointIndex + 1}`]) {
+      setDebug(`Motor${jointIndex} kapalı, lütfen motoru açın.`);
 
+      return;
+    }
     setLoading(true);
-    setDebug(
-      `API isteği gönderiliyor: Eksen ${jointIndex + 1}, Değer: ${value}`
-    );
-
     fetch(`${API_URL}/update-joint-value`, {
       method: "POST",
       headers: {
@@ -49,7 +53,7 @@ export default function JointControl() {
         return response.json();
       })
       .then((data) => {
-        setDebug(`API yanıtı: ${JSON.stringify(data)}`);
+        setDebug(`${JSON.stringify(data.message).replace(/"/g, "")}`);
       })
       .catch((error) => {
         setDebug(`API hatası: ${error.message}`);
@@ -61,11 +65,16 @@ export default function JointControl() {
   };
 
   const handleButtonDown = (jointIndex: number, increment: boolean) => {
+
     const buttonKey = `joint${jointIndex}_${increment ? "inc" : "dec"}`;
+    const direction = increment ? "inc" : "dec";
 
     if (intervalsRef.current[buttonKey]) {
       clearInterval(intervalsRef.current[buttonKey]);
+      delete intervalsRef.current[buttonKey];
     }
+
+    setActiveButton({ jointIndex, direction });
 
     sendJointValueToAPI(jointIndex, increment ? 1 : -1);
 
@@ -76,13 +85,47 @@ export default function JointControl() {
 
   const handleButtonUp = (jointIndex: number, increment: boolean) => {
     const buttonKey = `joint${jointIndex}_${increment ? "inc" : "dec"}`;
+    const direction = increment ? "inc" : "dec";
 
     if (intervalsRef.current[buttonKey]) {
       clearInterval(intervalsRef.current[buttonKey]);
       delete intervalsRef.current[buttonKey];
     }
 
-    sendJointValueToAPI(jointIndex, 0);
+    if (
+      activeButton.jointIndex === jointIndex &&
+      activeButton.direction === direction
+    ) {
+      setActiveButton({ jointIndex: null, direction: null });
+      sendJointValueToAPI(jointIndex, 0);
+    }
+  };
+
+  const handleTouchStart = (
+    e: React.TouchEvent,
+    jointIndex: number,
+    increment: boolean
+  ) => {
+    e.preventDefault();
+    handleButtonDown(jointIndex, increment);
+  };
+
+  const handleTouchEnd = (
+    e: React.TouchEvent,
+    jointIndex: number,
+    increment: boolean
+  ) => {
+    e.preventDefault();
+    handleButtonUp(jointIndex, increment);
+  };
+
+  const handleTouchCancel = (
+    e: React.TouchEvent,
+    jointIndex: number,
+    increment: boolean
+  ) => {
+    e.preventDefault();
+    handleButtonUp(jointIndex, increment);
   };
 
   const renderJointControl = (jointIndex: number) => {
@@ -102,8 +145,9 @@ export default function JointControl() {
             onMouseDown={() => handleButtonDown(jointIndex, false)}
             onMouseUp={() => handleButtonUp(jointIndex, false)}
             onMouseLeave={() => handleButtonUp(jointIndex, false)}
-            onTouchStart={() => handleButtonDown(jointIndex, false)}
-            onTouchEnd={() => handleButtonUp(jointIndex, false)}
+            onTouchStart={(e) => handleTouchStart(e, jointIndex, false)}
+            onTouchEnd={(e) => handleTouchEnd(e, jointIndex, false)}
+            onTouchCancel={(e) => handleTouchCancel(e, jointIndex, false)}
             disabled={loading || !selectedRobotId}
             className={`bg-red-600 hover:bg-red-700 w-1/2 py-3 text-lg font-bold`}
           >
@@ -114,8 +158,9 @@ export default function JointControl() {
             onMouseDown={() => handleButtonDown(jointIndex, true)}
             onMouseUp={() => handleButtonUp(jointIndex, true)}
             onMouseLeave={() => handleButtonUp(jointIndex, true)}
-            onTouchStart={() => handleButtonDown(jointIndex, true)}
-            onTouchEnd={() => handleButtonUp(jointIndex, true)}
+            onTouchStart={(e) => handleTouchStart(e, jointIndex, true)}
+            onTouchEnd={(e) => handleTouchEnd(e, jointIndex, true)}
+            onTouchCancel={(e) => handleTouchCancel(e, jointIndex, true)}
             disabled={loading || !selectedRobotId}
             className={`bg-green-600 hover:bg-green-700 w-1/2 py-3 text-lg font-bold`}
           >
@@ -145,7 +190,7 @@ export default function JointControl() {
       </div>
 
       {debug && (
-        <div className="bg-black/50 text-white text-xs p-2 mb-2 rounded">
+        <div className="flex justify-end bg-gray-500 text-red-500 text-xl p-2 mb-2 rounded font-bold">
           Debug: {debug}
         </div>
       )}
