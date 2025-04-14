@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { selectRobot, updateMotorStatuses } from "@/store/robotSlice";
+import {
+  selectRobot,
+  updateMotorStatuses,
+  setRobotStatus,
+  setRobotConnection,
+} from "@/store/robotSlice";
 const API_URL = "http://localhost:8000/api/robot";
 
 export default function RobotSelector() {
@@ -9,8 +14,6 @@ export default function RobotSelector() {
   const { robotType, selectedRobotId, robots } = useAppSelector(
     (state) => state.robot
   );
-
-  // console.log("robot selector", selectedRobotId);
 
   const handleSelect = (robotId: string) => {
     try {
@@ -31,6 +34,8 @@ export default function RobotSelector() {
         })
         .then((data) => {
           dispatch(selectRobot(robotId));
+          dispatch(setRobotStatus({ robotId, status: "moving" }));
+          dispatch(setRobotConnection({ robotId, isConnected: true }));
           return getMotorStatusForRobot(robotId);
         })
         .catch((error) => {
@@ -64,7 +69,6 @@ export default function RobotSelector() {
         motors: motorStatuses,
       })
     );
-    console.log(`${robotId} için motor durumları güncellendi:`, motorStatuses);
     setLoading(false);
     return data;
   };

@@ -4,6 +4,8 @@ import {
   setRobotType,
   selectRobot,
   updateMotorStatuses,
+  setRobotStatus,
+  setRobotConnection,
 } from "@/store/robotSlice";
 
 const API_URL = "http://localhost:8000/api/robot";
@@ -35,7 +37,6 @@ export default function RobotTypeSelector() {
         motors: motorStatuses,
       })
     );
-    console.log(`${robotId} için motor durumları güncellendi:`, motorStatuses);
     return data;
   };
   const handleSelectRobot = (type: "scara" | "industrial") => {
@@ -83,7 +84,13 @@ export default function RobotTypeSelector() {
                     return response.json();
                   })
                   .then((data) => {
-                    // console.log("Robot seçimi başarılı:", data);
+                    dispatch(
+                      setRobotStatus({
+                        robotId: availableScaraRobots[0],
+                        status: "moving",
+                      })
+                    );
+                    dispatch(setRobotConnection({ robotId: availableScaraRobots[0], isConnected: true }));
                     return getMotorStatusForRobot(availableScaraRobots[0]);
                   })
                   .catch((error) => {
