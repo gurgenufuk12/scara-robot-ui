@@ -65,7 +65,6 @@ export default function JointControl() {
   };
 
   const handleButtonDown = (jointIndex: number, increment: boolean) => {
-
     const buttonKey = `joint${jointIndex}_${increment ? "inc" : "dec"}`;
     const direction = increment ? "inc" : "dec";
 
