@@ -25,12 +25,12 @@ export default function JointControl() {
 
   const sendJointValueToAPI = (jointIndex: number, value: number) => {
     if (!selectedRobotId) return;
+    if (!selectedRobot?.motors[`motor${jointIndex + 1}`]) {
+      setDebug(`Motor${jointIndex} kapalı, lütfen motoru açın.`);
 
+      return;
+    }
     setLoading(true);
-    setDebug(
-      `API isteği gönderiliyor: Eksen ${jointIndex + 1}, Değer: ${value}`
-    );
-
     fetch(`${API_URL}/update-joint-value`, {
       method: "POST",
       headers: {
@@ -49,7 +49,7 @@ export default function JointControl() {
         return response.json();
       })
       .then((data) => {
-        setDebug(`API yanıtı: ${JSON.stringify(data)}`);
+        setDebug(`${JSON.stringify(data.message).replace(/"/g, "")}`);
       })
       .catch((error) => {
         setDebug(`API hatası: ${error.message}`);
@@ -61,28 +61,89 @@ export default function JointControl() {
   };
 
   const handleButtonDown = (jointIndex: number, increment: boolean) => {
+    // Log ekleyerek sorunu daha iyi anlayabiliriz
+    console.log(
+      `Button down: ${increment ? "+" : "-"} for joint ${jointIndex}`
+    );
+
     const buttonKey = `joint${jointIndex}_${increment ? "inc" : "dec"}`;
 
-    if (intervalsRef.current[buttonKey]) {
-      clearInterval(intervalsRef.current[buttonKey]);
-    }
-
-    sendJointValueToAPI(jointIndex, increment ? 1 : -1);
-
-    intervalsRef.current[buttonKey] = setInterval(() => {
-      sendJointValueToAPI(jointIndex, increment ? 1 : -1);
-    }, 100);
-  };
-
-  const handleButtonUp = (jointIndex: number, increment: boolean) => {
-    const buttonKey = `joint${jointIndex}_${increment ? "inc" : "dec"}`;
-
+    // Eğer bu tuş için zaten bir interval varsa, önce onu temizle
     if (intervalsRef.current[buttonKey]) {
       clearInterval(intervalsRef.current[buttonKey]);
       delete intervalsRef.current[buttonKey];
     }
 
+    // İlk değeri hemen gönder (0 değil, direkt +1 veya -1)
+    sendJointValueToAPI(jointIndex, increment ? 1 : -1);
+
+    // Basılı tutma için interval oluştur
+    intervalsRef.current[buttonKey] = setInterval(() => {
+      sendJointValueToAPI(jointIndex, increment ? 1 : -1);
+    }, 100);
+  };
+
+  // Buton bırakıldığında çağrılır
+  const handleButtonUp = (jointIndex: number, increment: boolean) => {
+    console.log(`Button up: ${increment ? "+" : "-"} for joint ${jointIndex}`);
+
+    const buttonKey = `joint${jointIndex}_${increment ? "inc" : "dec"}`;
+
+    // Interval'ı temizle
+    if (intervalsRef.current[buttonKey]) {
+      clearInterval(intervalsRef.current[buttonKey]);
+      delete intervalsRef.current[buttonKey];
+    }
+
+    // Buton bırakıldığında 0 değeri gönder
     sendJointValueToAPI(jointIndex, 0);
+  };
+
+  // Dokunmatik olaylar için özel işleyiciler
+  const handleTouchStart = (
+    e: React.TouchEvent,
+    jointIndex: number,
+    increment: boolean
+  ) => {
+    // Varsayılan davranışı engelle
+    e.preventDefault();
+
+    console.log(
+      `Touch start: ${increment ? "+" : "-"} for joint ${jointIndex}`
+    );
+
+    // Dokunmatik olay için buton basma işlevini çağır
+    handleButtonDown(jointIndex, increment);
+  };
+
+  const handleTouchEnd = (
+    e: React.TouchEvent,
+    jointIndex: number,
+    increment: boolean
+  ) => {
+    // Varsayılan davranışı engelle
+    e.preventDefault();
+
+    console.log(`Touch end: ${increment ? "+" : "-"} for joint ${jointIndex}`);
+
+    // Dokunmatik olay için buton bırakma işlevini çağır
+    handleButtonUp(jointIndex, increment);
+  };
+
+  const handleTouchCancel = (
+    e: React.TouchEvent,
+    jointIndex: number,
+    increment: boolean
+  ) => {
+    // Varsayılan davranışı engelle
+    e.preventDefault();
+
+    console.log(
+      `Touch cancel: ${increment ? "+" : "-"} for joint ${jointIndex}`
+    );
+
+    // Dokunmatik olay iptal edildiğinde buton bırakma işlevini çağır
+    handleButtonUp(jointIndex, increment);
   };
 
   const renderJointControl = (jointIndex: number) => {
@@ -99,11 +160,12 @@ export default function JointControl() {
 
         <div className="flex items-center justify-between gap-4">
           <Button
-            onMouseDown={() => handleButtonDown(jointIndex, false)}
+            onMouseDown={() => handleButtonDown(jointIndex, false)} // Fare için "-" butonu
             onMouseUp={() => handleButtonUp(jointIndex, false)}
             onMouseLeave={() => handleButtonUp(jointIndex, false)}
-            onTouchStart={() => handleButtonDown(jointIndex, false)}
-            onTouchEnd={() => handleButtonUp(jointIndex, false)}
+            onTouchStart={(e) => handleTouchStart(e, jointIndex, false)} // Dokunmatik için "-" butonu - event nesnesini geçiriyoruz
+            onTouchEnd={(e) => handleTouchEnd(e, jointIndex, false)}
+            onTouchCancel={(e) => handleTouchCancel(e, jointIndex, false)} // Bu olay dokunma iptal edildiğinde tetiklenir
             disabled={loading || !selectedRobotId}
             className={`bg-red-600 hover:bg-red-700 w-1/2 py-3 text-lg font-bold`}
           >
@@ -111,11 +173,12 @@ export default function JointControl() {
           </Button>
 
           <Button
-            onMouseDown={() => handleButtonDown(jointIndex, true)}
+            onMouseDown={() => handleButtonDown(jointIndex, true)} // Fare için "+" butonu
             onMouseUp={() => handleButtonUp(jointIndex, true)}
             onMouseLeave={() => handleButtonUp(jointIndex, true)}
-            onTouchStart={() => handleButtonDown(jointIndex, true)}
-            onTouchEnd={() => handleButtonUp(jointIndex, true)}
+            onTouchStart={(e) => handleTouchStart(e, jointIndex, true)} // Dokunmatik için "+" butonu - event nesnesini geçiriyoruz
+            onTouchEnd={(e) => handleTouchEnd(e, jointIndex, true)}
+            onTouchCancel={(e) => handleTouchCancel(e, jointIndex, true)} // Bu olay dokunma iptal edildiğinde tetiklenir
             disabled={loading || !selectedRobotId}
             className={`bg-green-600 hover:bg-green-700 w-1/2 py-3 text-lg font-bold`}
           >
@@ -145,7 +208,7 @@ export default function JointControl() {
       </div>
 
       {debug && (
-        <div className="bg-black/50 text-white text-xs p-2 mb-2 rounded">
+        <div className="flex justify-end bg-gray-500 text-red-500 text-xl p-2 mb-2 rounded font-bold">
           Debug: {debug}
         </div>
       )}
