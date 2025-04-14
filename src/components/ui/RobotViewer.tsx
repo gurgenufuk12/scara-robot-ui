@@ -17,18 +17,23 @@ export default function RobotViewer() {
 
   const handleReduxJointUpdate = (data: JointData) => {
     if (data.joints && selectedRobotId) {
-      Object.keys(data.joints).forEach((jointName) => {
-        const jointIndex = parseInt(jointName.replace("joint", "")) - 1;
-        const jointValue = data.joints[jointName];
+      Object.keys(data.joints)
+        .filter((jointName) => {
+          const jointIndex = parseInt(jointName.replace("joint", "")) - 1;
+          return jointIndex < axisCount;
+        })
+        .forEach((jointName) => {
+          const jointIndex = parseInt(jointName.replace("joint", "")) - 1;
+          const jointValue = data.joints[jointName];
 
-        dispatch(
-          updateJointValue({
-            robotId: selectedRobotId,
-            jointIndex: jointIndex,
-            value: jointValue,
-          })
-        );
-      });
+          dispatch(
+            updateJointValue({
+              robotId: selectedRobotId,
+              jointIndex: jointIndex,
+              value: jointValue,
+            })
+          );
+        });
     }
   };
   const getJointValue = () => {
@@ -46,7 +51,6 @@ export default function RobotViewer() {
           return response.json();
         })
         .then((data) => {
-          // console.log("Gelen veri:", data);
           handleReduxJointUpdate(data);
         })
         .catch((error) => {
@@ -59,9 +63,9 @@ export default function RobotViewer() {
   useEffect(() => {
     const interval = setInterval(() => {
       getJointValue();
-    }, 3000); // 3 saniyede bir çağır
+    }, 1000);
 
-    return () => clearInterval(interval); // Cleanup function
+    return () => clearInterval(interval);
   }, []);
   return (
     <Card className="bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-700">
