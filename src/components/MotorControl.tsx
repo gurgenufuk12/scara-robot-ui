@@ -50,7 +50,6 @@ export default function MotorControl() {
               motorId,
             })
           );
-          console.log("asdsadsadsa:", data);
         })
         .catch((error) => {
           console.error("Robot seçimi hatası:", error);
