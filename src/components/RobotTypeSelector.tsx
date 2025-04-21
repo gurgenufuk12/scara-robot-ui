@@ -109,12 +109,39 @@ export default function RobotTypeSelector() {
             const availableIndustrialRobots = Object.values(robots)
               .filter((robot) => robot.axisCount === 6)
               .map((robot) => robot.id);
-
             if (availableIndustrialRobots.length > 0) {
-              console.log(
-                "İlk endüstriyel robot seçiliyor:",
-                availableIndustrialRobots[0]
-              );
+              try {
+                fetch(`${API_URL}/choose-active-robot`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    type: availableIndustrialRobots[0],
+                  }),
+                })
+                  .then((response) => {
+                    if (!response.ok) {
+                      throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                  })
+                  .then((data) => {
+                    dispatch(
+                      setRobotStatus({
+                        robotId: availableIndustrialRobots[0],
+                        status: "moving",
+                      })
+                    );
+                    dispatch(setRobotConnection({ robotId: availableIndustrialRobots[0], isConnected: true }));
+                    return getMotorStatusForRobot(availableIndustrialRobots[0]);
+                  })
+                  .catch((error) => {
+                    console.error("Robot seçimi hatası:", error);
+                  });
+              } catch (error) {
+                console.error("Hata:", error);
+              }
               dispatch(selectRobot(availableIndustrialRobots[0]));
             } else {
               console.warn("Kullanılabilir endüstriyel robot bulunamadı");
