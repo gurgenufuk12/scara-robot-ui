@@ -4,6 +4,7 @@ import JointControl from "@/components/ui/JointControl";
 import CartesianControl from "@/components/ui/CartesianControl";
 import RobotViewer from "@/components/ui/RobotViewer";
 import ProgramMode from "@/components/ui/ProgramMode";
+import VelocityDiagram from "@/components/ui/VelocityDiagram";
 
 export default function TabMenu() {
   const { robotType, selectedRobotId, robots } = useAppSelector(
@@ -17,6 +18,7 @@ export default function TabMenu() {
   const scaraTabs = [
     { id: "joint", label: "Eksen Kontrol", icon: "🔄" },
     { id: "cartesian", label: "Kartezyen Kontrol", icon: "📐" },
+    { id: "velocities", label: "Hız Kontrolü", icon: "⚡" },
     { id: "view", label: "Görselleştirme", icon: "👁️" },
     { id: "program", label: "Program Modu", icon: "📝" },
     { id: "settings", label: "Ayarlar", icon: "⚙️" },
@@ -26,6 +28,7 @@ export default function TabMenu() {
   const industrialTabs = [
     { id: "joint", label: "Eksen Kontrol", icon: "🔄" },
     { id: "cartesian", label: "Kartezyen Kontrol", icon: "📐" },
+    { id: "velocities", label: "Hız Kontrolü", icon: "⚡" },
     { id: "view", label: "Görselleştirme", icon: "👁️" },
     { id: "trajectory", label: "Yörünge Planlama", icon: "🛣️" },
     { id: "program", label: "Program Modu", icon: "📝" },
@@ -110,6 +113,12 @@ export default function TabMenu() {
               Sistem Logları
             </h2>
             {/* Log içeriği */}
+          </div>
+        )}
+        {activeTab === "velocities" && (
+          <div className="bg-gray-700 p-6 rounded-lg">
+            <h2 className="text-xl text-white font-bold mb-4">Hız Kontrolü</h2>
+            <VelocityDiagram />
           </div>
         )}
       </div>
