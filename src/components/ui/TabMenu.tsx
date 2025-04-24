@@ -22,18 +22,15 @@ export default function TabMenu() {
     { id: "view", label: "Görselleştirme", icon: "👁️" },
     { id: "program", label: "Program Modu", icon: "📝" },
     { id: "settings", label: "Ayarlar", icon: "⚙️" },
-    { id: "logs", label: "Loglar", icon: "📋" },
   ];
 
   const industrialTabs = [
     { id: "joint", label: "Eksen Kontrol", icon: "🔄" },
     { id: "cartesian", label: "Kartezyen Kontrol", icon: "📐" },
     { id: "velocities", label: "Hız Kontrolü", icon: "⚡" },
-    { id: "view", label: "Görselleştirme", icon: "👁️" },
-    { id: "trajectory", label: "Yörünge Planlama", icon: "🛣️" },
+    // { id: "view", label: "Görselleştirme", icon: "👁️" },
     { id: "program", label: "Program Modu", icon: "📝" },
     { id: "settings", label: "Ayarlar", icon: "⚙️" },
-    { id: "logs", label: "Loglar", icon: "📋" },
   ];
 
   const tabs = robotType === "industrial" ? industrialTabs : scaraTabs;
@@ -80,11 +77,11 @@ export default function TabMenu() {
 
         {activeTab === "cartesian" && <CartesianControl />}
 
-        {activeTab === "view" && <RobotViewer />}
+        {/* {activeTab === "view" && <RobotViewer />} */}
 
         {activeTab === "program" && <ProgramMode />}
 
-        {activeTab === "trajectory" && axisCount === 6 && (
+        {/* {activeTab === "trajectory" && axisCount === 6 && (
           <div className="bg-gray-700 p-6 rounded-lg">
             <h2 className="text-xl text-white font-bold mb-4">
               Yörünge Planlama
@@ -99,7 +96,7 @@ export default function TabMenu() {
               </div>
             </div>
           </div>
-        )}
+        )} */}
         {activeTab === "settings" && (
           <div className="bg-gray-700 p-6 rounded-lg">
             <h2 className="text-xl text-white font-bold mb-4">Ayarlar</h2>
@@ -107,14 +104,13 @@ export default function TabMenu() {
           </div>
         )}
 
-        {activeTab === "logs" && (
+        {/* {activeTab === "logs" && (
           <div className="bg-gray-700 p-6 rounded-lg">
             <h2 className="text-xl text-white font-bold mb-4">
               Sistem Logları
             </h2>
-            {/* Log içeriği */}
           </div>
-        )}
+        )} */}
         {activeTab === "velocities" && (
           <div className="bg-gray-700 p-6 rounded-lg">
             <h2 className="text-xl text-white font-bold mb-4">Hız Kontrolü</h2>
