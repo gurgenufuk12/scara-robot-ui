@@ -1,21 +1,22 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/Button";
-
-const API_URL = "http://localhost:8000/api/robot";
+import { useConnection } from "@/contexts/ConnectionContext";
 
 const ProgramMode = () => {
+  const { getApiUrl, isConnected } = useConnection();
   const [program, setProgram] = useState("");
   const [isProgramCodeValid, setIsProgramCodeValid] = useState(false);
   const lines = program.split("\n");
 
-  // console.log(program);
   const handleSubmitProgramCode = () => {
-    if (!program) {
-      console.error("Program kodu boş olamaz.");
+    const apiUrl = getApiUrl("send-program-code");
+
+    if (!program || !apiUrl || !isConnected) {
+      console.error("Program kodu boş olamaz veya bağlantı yok.");
       return;
     }
     try {
-      fetch(`${API_URL}/send-program-code`, {
+      fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -47,12 +48,14 @@ const ProgramMode = () => {
     }
   };
   const handleExecuteProgramCode = () => {
-    if (!program) {
-      console.error("Program kodu boş olamaz.");
+    const apiSendUrl = getApiUrl("send-program-code");
+
+    if (!program || !apiSendUrl || !isConnected) {
+      console.error("Program kodu boş olamaz veya bağlantı yok.");
       return;
     }
     try {
-      fetch(`${API_URL}/execute-program-code`, {
+      fetch(apiSendUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

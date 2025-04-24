@@ -3,8 +3,9 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useAppSelector } from "@/store/hooks";
 import VelocityLimits from "./VelocityLimits";
+import { useConnection } from "@/contexts/ConnectionContext";
 
-const API_URL = "http://localhost:8000/api/robot";
+const API_URL = "http://192.168.2.104:8000/api/robot";
 
 interface VelocityData {
   [key: string]: number;
@@ -15,11 +16,12 @@ interface MaxVelocityData {
 }
 
 interface ValidationErrorData {
-  [key: string]: string | null; // Her eksen için hata mesajı
+  [key: string]: string | null;
 }
 
 export default function VelocityDiagram() {
   const { selectedRobotId, robots } = useAppSelector((state) => state.robot);
+  const { getApiUrl, connection } = useConnection(); // ConnectionContext'ten bağlantı bilgilerini al
   const selectedRobot = selectedRobotId ? robots[selectedRobotId] : null;
   const axisCount = selectedRobot ? selectedRobot.axisCount : 0;
 
@@ -138,7 +140,7 @@ export default function VelocityDiagram() {
     setMessage(null); // Önceki mesajları temizle
 
     console.log("Kaydedilecek hız değerleri:", velocities);
-// USE post-velocities API çağrısı yap
+    // USE post-velocities API çağrısı yap
     try {
       // Gerçek API çağrısı (şimdilik yorum satırı)
       /* ... */

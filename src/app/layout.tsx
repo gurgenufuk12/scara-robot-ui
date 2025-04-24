@@ -1,4 +1,5 @@
 import { Providers } from "./providers";
+import { ConnectionProvider } from "@/contexts/ConnectionContext";
 import "./globals.css";
 
 export default function RootLayout({
@@ -9,7 +10,9 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <body>
-        <Providers>{children}</Providers>
+        <ConnectionProvider>
+          <Providers>{children}</Providers>
+        </ConnectionProvider>
       </body>
     </html>
   );
