@@ -128,6 +128,8 @@ export default function JointControl() {
   };
 
   const renderJointControl = (jointIndex: number) => {
+    const motorActive =
+      selectedRobot?.motors[`motor${jointIndex + 1}`] ?? false;
     return (
       <div
         key={jointIndex}
@@ -147,8 +149,8 @@ export default function JointControl() {
             onTouchStart={(e) => handleTouchStart(e, jointIndex, false)}
             onTouchEnd={(e) => handleTouchEnd(e, jointIndex, false)}
             onTouchCancel={(e) => handleTouchCancel(e, jointIndex, false)}
-            disabled={loading || !selectedRobotId}
-            className={`bg-red-600 hover:bg-red-700 w-1/2 py-3 text-lg font-bold`}
+            disabled={loading || !selectedRobotId || !motorActive}
+            className={`bg-red-600 hover:bg-red-700 w-1/2 py-3 text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             -
           </Button>
@@ -160,8 +162,8 @@ export default function JointControl() {
             onTouchStart={(e) => handleTouchStart(e, jointIndex, true)}
             onTouchEnd={(e) => handleTouchEnd(e, jointIndex, true)}
             onTouchCancel={(e) => handleTouchCancel(e, jointIndex, true)}
-            disabled={loading || !selectedRobotId}
-            className={`bg-green-600 hover:bg-green-700 w-1/2 py-3 text-lg font-bold`}
+            disabled={loading || !selectedRobotId || !motorActive}
+            className={`bg-green-600 hover:bg-green-700 w-1/2 py-3 text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             +
           </Button>
@@ -187,12 +189,6 @@ export default function JointControl() {
           </div>
         )}
       </div>
-
-      {debug && (
-        <div className="flex justify-end bg-gray-500 text-red-500 text-xl p-2 mb-2 rounded font-bold">
-          Debug: {debug}
-        </div>
-      )}
 
       {!selectedRobotId ? (
         <div className="text-center text-gray-400 py-8">
