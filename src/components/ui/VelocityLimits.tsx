@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAppSelector } from "@/store/hooks";
-
-const API_URL = "http://localhost:8000/api/robot";
+import { useConnection } from "@/contexts/ConnectionContext";
+const API_URL = "http://192.168.2.104:8000/api/robot";
 
 interface MaxVelocityData {
   [key: string]: number;
@@ -16,6 +16,7 @@ export default function VelocityLimits({
   onLimitsFetched,
   onError,
 }: VelocityLimitsProps) {
+  const { getApiUrl, isConnected } = useConnection(); // API URL'sini ConnectionContext'ten al
   const { selectedRobotId, robots } = useAppSelector((state) => state.robot);
   const [loading, setLoading] = useState<boolean>(false);
   const selectedRobot = selectedRobotId ? robots[selectedRobotId] : null;

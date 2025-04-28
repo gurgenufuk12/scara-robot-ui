@@ -1,14 +1,16 @@
 import { useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { useConnection } from "@/contexts/ConnectionContext";
 import { updateJointValue } from "@/store/robotSlice";
 import { Card } from "@/components/ui/Card";
-const API_URL = "http://localhost:8000/api/robot";
+
 interface JointData {
   joints: Record<string, number>;
 }
 
 export default function RobotViewer() {
   const dispatch = useAppDispatch();
+  const { getApiUrl, isConnected } = useConnection();
   const { selectedRobotId, robots } = useAppSelector((state) => state.robot);
 
   const selectedRobot = selectedRobotId ? robots[selectedRobotId] : null;
@@ -37,8 +39,13 @@ export default function RobotViewer() {
     }
   };
   const getJointValue = () => {
+    const apiUrl = getApiUrl("get_joint_value");
+    if (!isConnected || !apiUrl) {
+      console.error("Bağlantı hatası veya API URL'si bulunamadı.");
+      return;
+    }
     try {
-      fetch(`${API_URL}/get_joint_value`, {
+      fetch(apiUrl, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

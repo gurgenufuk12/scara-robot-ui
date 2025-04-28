@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAppSelector } from "@/store/hooks";
+import { useConnection } from "@/contexts/ConnectionContext";
 
 const API_URL = "http://localhost:8000/api/robot";
 
@@ -10,6 +11,7 @@ const CARTESIAN_AXES = ["x", "y", "z", "roll", "pitch", "yaw"];
 
 export default function CartesianControl() {
   const { selectedRobotId, robots } = useAppSelector((state) => state.robot);
+  const { getApiUrl, isConnected } = useConnection(); // Context'ten al
   const selectedRobot = selectedRobotId ? robots[selectedRobotId] : null;
   const axisCount = selectedRobot ? selectedRobot.axisCount : 0;
 
@@ -46,12 +48,13 @@ export default function CartesianControl() {
   }, []);
 
   const sendCartesianValueToAPI = (axis: string, value: number) => {
-    if (!selectedRobotId) return;
+    const apiUrl = getApiUrl("update-cartesian-value"); // Dinamik URL al
+    if (!selectedRobotId || !apiUrl || !isConnected) return;
 
     setLoading(true);
     console.log(`API'ye ${axis} eksenine ${value} değeri gönderiliyor...`);
 
-    fetch(`${API_URL}/update-cartesian-value`, {
+    fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

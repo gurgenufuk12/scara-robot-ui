@@ -2,11 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAppSelector } from "@/store/hooks";
-
-const API_URL = "http://localhost:8000/api/robot";
+import { useConnection } from "@/contexts/ConnectionContext";
 
 export default function JointControl() {
   const { selectedRobotId, robots } = useAppSelector((state) => state.robot);
+  const { getApiUrl, isConnected } = useConnection();
   const selectedRobot = selectedRobotId ? robots[selectedRobotId] : null;
   const axisCount = selectedRobot ? selectedRobot.axisCount : 0;
 
@@ -28,14 +28,15 @@ export default function JointControl() {
   }, []);
 
   const sendJointValueToAPI = (jointIndex: number, value: number) => {
-    if (!selectedRobotId) return;
+    const apiUrl = getApiUrl("update-joint-value");
+    if (!selectedRobotId || !apiUrl || !isConnected) return;
     if (!selectedRobot?.motors[`motor${jointIndex + 1}`]) {
       setDebug(`Motor${jointIndex} kapalı, lütfen motoru açın.`);
 
       return;
     }
     setLoading(true);
-    fetch(`${API_URL}/update-joint-value`, {
+    fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
